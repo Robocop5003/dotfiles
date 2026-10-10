@@ -71,9 +71,17 @@ export function Workspaces() {
   scroll.connect("scroll", (_, dx, dy) => {
     const current = hyprland.focusedWorkspace?.id || 1;
     if (dy > 0) {
-      hyprland.dispatch("workspace", String(current + 1));
+      execAsync([
+        "hyprctl",
+        "dispatch",
+        `hl.dsp.focus({ workspace = "${current + 1}" })`
+      ]);
     } else if (dy < 0 && current > 1) {
-      hyprland.dispatch("workspace", String(current - 1));
+      execAsync([
+        "hyprctl",
+        "dispatch",
+        `hl.dsp.focus({ workspace = "${current - 1}" })`
+      ]);
     }
   });
 
@@ -112,7 +120,11 @@ export function Workspaces() {
       })
 
       btn.connect("clicked", () => {
-        hyprland.dispatch("workspace", String(id))
+        execAsync([
+          "hyprctl",
+          "dispatch",
+          `hl.dsp.focus({ workspace = "${id}" })`
+        ]);
       })
 
       container.append(btn)
