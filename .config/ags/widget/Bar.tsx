@@ -68,21 +68,54 @@ export function Workspaces() {
     flags: Gtk.EventControllerScrollFlags.VERTICAL
   });
 
+  const SCROLL_THRESHOLD = 30.0;
+  let scroll_acumulator = 0;
   scroll.connect("scroll", (_, dx, dy) => {
-    const current = hyprland.focusedWorkspace?.id || 1;
-    if (dy > 0) {
-      execAsync([
-        "hyprctl",
-        "dispatch",
-        `hl.dsp.focus({ workspace = "${current + 1}" })`
-      ]);
-    } else if (dy < 0 && current > 1) {
-      execAsync([
-        "hyprctl",
-        "dispatch",
-        `hl.dsp.focus({ workspace = "${current - 1}" })`
-      ]);
-    }
+      const current = hyprland.focusedWorkspace?.id || 1;
+      if(dy === 1)
+      {
+          scroll_acumulator = 0;
+          execAsync([
+            "hyprctl",
+            "dispatch",
+            `hl.dsp.focus({ workspace = "${current + 1}" })`
+          ]);
+          return;
+      }
+
+      if(dy === -1)
+      {
+          scroll_acumulator = 0;
+          execAsync([
+            "hyprctl",
+            "dispatch",
+            `hl.dsp.focus({ workspace = "${current - 1}" })`
+          ]);
+          return;
+      }
+
+      scroll_acumulator += dy;
+      if(scroll_acumulator >= SCROLL_THRESHOLD)
+      {
+          scroll_acumulator = 0;
+          execAsync([
+            "hyprctl",
+            "dispatch",
+            `hl.dsp.focus({ workspace = "${current + 1}" })`
+          ]);
+      } else if (current > 1 && scroll_acumulator <= -SCROLL_THRESHOLD) {
+          scroll_acumulator = 0;
+          execAsync([
+            "hyprctl",
+            "dispatch",
+            `hl.dsp.focus({ workspace = "${current - 1}" })`
+          ]);
+      }
+
+      if((dy > 0 && scroll_acumulator < 0) || (dy < 0 && scroll_acumulator > 0))
+      {
+          scroll_acumulator = dy;
+      }
   });
 
   container.add_controller(scroll);
