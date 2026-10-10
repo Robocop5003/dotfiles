@@ -1,0 +1,121 @@
+local autocmd = vim.api.nvim_create_autocmd
+local augroup = vim.api.nvim_create_augroup
+
+-- Highlight on yank
+autocmd("TextYankPost", {
+  group = augroup("HighlightYank", { clear = true }),
+  callback = function()
+    vim.hl.on_yank()
+  end,
+})
+
+-- Restore cursor position on file reopen
+autocmd("BufReadPost", {
+  group = augroup("RestoreCursor", { clear = true }),
+  callback = function(args)
+    local name = vim.api.nvim_buf_get_name(args.buf)
+    if name:match("COMMIT_EDITMSG$") or name:match("git%-rebase%-todo$") then
+      return
+    end
+    local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
+    local line_count = vim.api.nvim_buf_line_count(args.buf)
+    if mark[1] > 0 and mark[1] <= line_count then
+      pcall(vim.api.nvim_win_set_cursor, 0, mark)
+    end
+  end,
+})
+
+-- Filetype-specific indentation
+autocmd("FileType", {
+  group = augroup("FiletypeIndent", { clear = true }),
+  pattern = {
+    "css",
+    "html",
+    "javascript",
+    "javascriptreact",
+    "json",
+    "lua",
+    "nix",
+    "toml",
+    "typescript",
+    "typescriptreact",
+    "yaml",
+  },
+  callback = function()
+    vim.opt_local.softtabstop = 2
+    vim.opt_local.tabstop = 2
+    vim.opt_local.shiftwidth = 2
+  end,
+})
+
+-- Text files: textwidth
+autocmd("FileType", {
+  group = augroup("TextWidth", { clear = true }),
+  pattern = { "plaintex", "text", "markdown", "tex" },
+  callback = function()
+    vim.opt_local.textwidth = 80
+  end,
+})
+
+-- Auto-adjust quickfix height
+autocmd("FileType", {
+  group = augroup("QuickfixHeight", { clear = true }),
+  pattern = "qf",
+  callback = function()
+    vim.opt_local.wrap = false
+    local lines = vim.fn.line("$")
+    local height = math.max(1, math.min(lines, 10))
+    vim.cmd(height .. "wincmd _")
+  end,
+})
+
+-- Git commit: jj to save and close
+autocmd("FileType", {
+  group = augroup("GitCommit", { clear = true }),
+  pattern = "gitcommit",
+  callback = function()
+    vim.keymap.set("i", "jj", "<ESC>ZZ", { buffer = 0, desc = "Save and close commit" })
+  end,
+})
+
+-- Go: use tabs for listchars
+autocmd("FileType", {
+  group = augroup("GoListchars", { clear = true }),
+  pattern = "go",
+  callback = function()
+    vim.opt_local.listchars = { tab = "  ", trail = "·", extends = "❯", precedes = "❮" }
+  end,
+})
+
+-- Run commands per filetype
+local ft_runner_group = augroup("FiletypeRunners", { clear = true })
+local ft_runners = {
+  bash = "bash",
+  javascript = "node",
+  python = "python",
+  sh = "sh",
+}
+for ft, cmd in pairs(ft_runners) do
+  autocmd("FileType", {
+    group = ft_runner_group,
+    pattern = ft,
+    callback = function()
+      vim.keymap.set("n", "<leader>R", function()
+        vim.cmd("write")
+        vim.cmd("!" .. cmd .. " " .. vim.fn.shellescape(vim.fn.expand("%")))
+      end, { buffer = 0, silent = true, desc = "Run file with " .. cmd })
+    end,
+  })
+end
+autocmd("FileType", {
+  group = ft_runner_group,
+  pattern = "c",
+  callback = function()
+    vim.keymap.set("n", "<leader>R", function()
+      local file = vim.fn.shellescape(vim.fn.expand("%"))
+      local base = vim.fn.shellescape(vim.fn.expand("%:r"))
+      vim.cmd("write")
+      vim.cmd("!gcc -o " .. base .. " -Wall -std=c99 " .. file .. " && ./" .. base)
+    end, { buffer = 0, silent = true, desc = "Compile and run with gcc" })
+  end,
+})

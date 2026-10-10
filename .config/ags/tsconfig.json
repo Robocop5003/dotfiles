@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "strict": true,
+    "module": "ES2022",
+    "target": "ES2020",
+    "lib": ["ES2023"],
+    "moduleResolution": "Bundler",
+    // "checkJs": true,
+    // "allowJs": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "ags/gtk4",
+    "baseUrl": ".",
+    "paths": {
+      "gi://*": [
+        "./system-types/*",
+        "node_modules/@girs/*",
+        "./@girs/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "./@girs/**/*.d.ts"
+  ]
+}

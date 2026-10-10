@@ -1,0 +1,108 @@
+return {
+  {
+    "neovim/nvim-lspconfig",
+    lazy = false,
+    config = function()
+      vim.lsp.config("lua_ls", {
+        settings = {
+          Lua = {
+            workspace = { checkThirdParty = false },
+            telemetry = { enable = false },
+          },
+        },
+      })
+
+      vim.lsp.config("gopls", {
+        settings = {
+          gopls = {
+            gofumpt = true,
+            staticcheck = true,
+            analyses = { unusedparams = true, unusedwrite = true, nilness = true },
+            hints = {
+              assignVariableTypes = true,
+              compositeLiteralFields = true,
+              parameterNames = true,
+              rangeVariableTypes = true,
+            },
+            directoryFilters = { "-vendor" },
+          },
+        },
+      })
+
+      vim.lsp.config("omnisharp", {
+        cmd = { "omnisharp", "--languageserver" },
+        filetypes = { "cs" },
+        root_markers = { ".sln", ".csproj" },
+      })
+
+      vim.lsp.config("rust_analyzer", {
+        settings = {
+          ["rust-analyzer"] = {
+            check = { command = "clippy" },
+          },
+        },
+      })
+
+      vim.lsp.config("yamlls", {
+        settings = {
+          yaml = {
+            schemas = {
+              kubernetes = { "k8s/**/*.yaml", "manifests/**/*.yaml", "deploy/**/*.yaml" },
+            },
+            schemaStore = { enable = true },
+          },
+        },
+      })
+
+      vim.lsp.enable({
+        "lua_ls",
+        "gopls",
+        "rust_analyzer",
+        "clangd",
+        "pyright",
+        "vtsls",
+        "nil_ls",
+        "bashls",
+        "yamlls",
+        "jsonls",
+        "taplo",
+        "buf_ls",
+        "omnisharp"
+      })
+
+      local lsp_group = vim.api.nvim_create_augroup("UserLspAttach", { clear = true })
+      vim.api.nvim_create_autocmd("LspAttach", {
+        group = lsp_group,
+        callback = function(args)
+          local bufnr = args.buf
+          local map = function(mode, lhs, rhs, desc)
+            vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
+          end
+          map("n", "gd", vim.lsp.buf.definition, "Go to definition")
+          map("n", "gD", vim.lsp.buf.type_definition, "Type definition")
+          map("n", "<leader>e", vim.diagnostic.open_float, "Diagnostics float")
+          map("n", "<leader>ih", function()
+            vim.lsp.inlay_hints.enable(not vim.lsp.inlay_hints.is_enabled({ bufnr = bufnr }))
+          end, "Toggle inlay hints")
+          map("n", "grr", function()
+            require("fzf-lua").lsp_references()
+          end, "References")
+        end,
+      })
+
+      vim.diagnostic.config({
+        signs = {
+          text = {
+            [vim.diagnostic.severity.ERROR] = "✖",
+            [vim.diagnostic.severity.WARN] = "⚠",
+            [vim.diagnostic.severity.INFO] = "ℹ",
+            [vim.diagnostic.severity.HINT] = "➤",
+          },
+        },
+        virtual_text = { current_line = true },
+        float = { border = "rounded" },
+        severity_sort = true,
+      })
+    end,
+  },
+}

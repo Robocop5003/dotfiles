@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "ags": "*",
+    "gnim": "*"
+  },
+  "prettier": {
+    "semi": false,
+    "tabWidth": 2
+  },
+  "devDependencies": {
+    "@girs/gtk-4.0": "^5.4.0",
+    "@ts-for-gir/cli": "^5.4.0"
+  }
+}
